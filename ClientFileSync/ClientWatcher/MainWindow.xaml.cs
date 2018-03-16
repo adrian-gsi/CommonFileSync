@@ -93,6 +93,7 @@ namespace ClientWatcher
             _watcher.NotifyFilter = NotifyFilters.LastWrite;
             _watcher.Filter = "*.*";
             _watcher.Changed += new FileSystemEventHandler(OnWatcherChanged);
+            _watcher.Deleted += new FileSystemEventHandler(OnWatcherDeleted);
             _watcher.EnableRaisingEvents = true;
         }
 
@@ -170,6 +171,12 @@ namespace ClientWatcher
         }
 
         private void OnWatcherChanged(object source, FileSystemEventArgs e)
+        {
+            if (!fileExists(e.Name, "").Result)
+                Task.WaitAll(sendFile(e.Name));
+        }
+
+        private void OnWatcherDeleted(object source, FileSystemEventArgs e)
         {
             if (!fileExists(e.Name, "").Result)
                 Task.WaitAll(sendFile(e.Name));

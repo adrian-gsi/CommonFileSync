@@ -13,7 +13,17 @@ namespace ServerFileSync
 
         public FileSystemFileManager(string folderPath)
         {
+            if (!Directory.Exists(folderPath))
+                Directory.CreateDirectory(folderPath);
             this._filePath = folderPath;
+        }
+
+        public string FilePath { get => _filePath; set => _filePath = value; }
+
+        public void Delete(string uri)
+        {
+            if (File.Exists(_filePath + "\\" + uri))
+                File.Delete(_filePath + "\\" + uri);
         }
 
         public bool Exists(string fileName)

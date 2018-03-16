@@ -76,6 +76,25 @@ namespace ServerFileSync.Controllers
 
             
         }
+        
+        public HttpResponseMessage Delete(string filename, string extension)
+        {
+            try
+            {
+                if (String.IsNullOrEmpty(filename) || extension == null)
+                    return new HttpResponseMessage(HttpStatusCode.BadRequest);
+                _fileManager.Delete(filename + "." + extension);
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            catch (IOException excp)
+            {
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError) { Content = new StringContent("Problems while deleting file. " + excp.Message) };                
+            }
+            catch (Exception excp)
+            {
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError) { Content = new StringContent(excp.Message) };                
+            }
+        }
 
         private async Task<byte[]> GetFileBytesFromRequest(MultipartMemoryStreamProvider multiContents)
         {

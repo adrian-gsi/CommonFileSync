@@ -14,5 +14,7 @@ namespace ServerFileSync.Interfaces
         FileStream GetStream(string uri);
 
         bool Exists(string uri);
+
+        void Delete(string uri);
     }
 }

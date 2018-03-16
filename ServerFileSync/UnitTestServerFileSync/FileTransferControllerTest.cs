@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -15,7 +16,7 @@ namespace UnitTestServerFileSync
         FileTransferController fileController;
         Mock<IFileManager> mockFileManager;
         Mock<IFileNotifier> mockHubWrapper;
-
+        string root;
         [TestInitialize]
         public void Startup()
         {
@@ -27,10 +28,20 @@ namespace UnitTestServerFileSync
             mockHubWrapper = new Mock<IFileNotifier>();
             var mockHubWrapperObject = mockHubWrapper.Object;
 
-            fileController = new FileTransferController(mockFileManagerOject, mockHubWrapperObject, "c:\\GSI");// (mockFileManager.Object, mockHubWrapper.Object);
+            root = "c:\\GSI";
+            fileController = new FileTransferController(mockFileManagerOject, mockHubWrapperObject, root);// (mockFileManager.Object, mockHubWrapper.Object);
 
    
         }
+
+        //[TestCleanup]
+        //public void TearDown()
+        //{
+        //    mockFileManager = null;
+        //    mockHubWrapper = null;
+        //    root = null;
+        //    fileController = null;
+        //}
 
         [TestMethod]
         public void Upload_NoFileName_ReturnsBadRequest()
@@ -133,10 +144,10 @@ namespace UnitTestServerFileSync
         [DataTestMethod]
         [DataRow(true)]
         [DataRow(false)]
-        public void Exists_ParamsOK_ReturnsFileManagerExistsMethod(bool existsMethodResult)
+        public void Exists_ParamsOK_ReturnsFileManagerExistsMethodOutput(bool existsMethodOutput)
         {
             //ARRANGE
-            mockFileManager.Setup(x => x.Exists(It.IsAny<string>())).Returns(existsMethodResult);
+            mockFileManager.Setup(x => x.Exists(It.IsAny<string>())).Returns(existsMethodOutput);
             byte[] fileBytes = new byte[] { 1, 2, 3 };
             HttpContent fileContent = new ByteArrayContent(fileBytes);
             var fileName = "MyFile.txt";
@@ -155,7 +166,113 @@ namespace UnitTestServerFileSync
             //ASSERT
             mockFileManager.Verify(x => x.Exists(fileName), Times.Once);
             Assert.AreEqual(result.StatusCode, System.Net.HttpStatusCode.OK);
-            Assert.AreEqual(existsMethodResult, JsonConvert.DeserializeObject<bool>(result.Content.ReadAsStringAsync().Result));
+            Assert.AreEqual(existsMethodOutput, JsonConvert.DeserializeObject<bool>(result.Content.ReadAsStringAsync().Result));
+        }
+
+        [TestMethod]
+        public void Delete_EmptyParam_ReturnsBadRequest()
+        {
+            //ARRANGE
+
+            fileController.Request = new System.Net.Http.HttpRequestMessage();
+            //fileController.Request.RequestUri = new Uri("http://localhost/FileTransfer/");
+
+
+            //ACT
+            var result = fileController.Delete(null, null);
+
+            //ASSERT
+            mockFileManager.Verify(x => x.Delete(It.IsAny<string>()), Times.Never);
+            Assert.AreEqual(System.Net.HttpStatusCode.BadRequest, result.StatusCode);
+        }
+
+        public void Delete_EmptyParam_DeleteMethodNotCalled()
+        {
+            //ARRANGE
+
+            fileController.Request = new System.Net.Http.HttpRequestMessage();
+            //fileController.Request.RequestUri = new Uri("http://localhost/FileTransfer/");
+
+
+            //ACT
+            var result = fileController.Delete(null, null);
+
+            //ASSERT
+            mockFileManager.Verify(x => x.Delete(It.IsAny<string>()), Times.Never);
+        }
+
+        [TestMethod]
+        public void Delete_ParamsOK_ReturnsOK()
+        {
+            //ARRANGE
+            string filename = "myFile";
+            string extension = "txt";
+            fileController.Request = new System.Net.Http.HttpRequestMessage();
+            //fileController.Request.RequestUri = new Uri("http://localhost/FileTransfer/myFile/txt/CaaaaRaaaaC");
+
+
+            //ACT
+            var result = fileController.Delete(filename, extension);
+
+            //ASSERT
+            Assert.AreEqual(System.Net.HttpStatusCode.OK, result.StatusCode);
+        }
+
+        [TestMethod]
+        public void Delete_ParamsOK_DeletesFile()
+        {
+            //ARRANGE
+            string filename = "myFile";
+            string extension = "txt";
+            fileController.Request = new System.Net.Http.HttpRequestMessage();
+            //fileController.Request.RequestUri = new Uri("http://localhost/FileTransfer/myFile/txt/CaaaaRaaaaC");
+
+
+            //ACT
+            var result = fileController.Delete(filename, extension);
+
+            //ASSERT
+            mockFileManager.Verify(x => x.Delete(filename + "." + extension), Times.Once);
+        }
+
+        [TestMethod]
+        public void Delete_OnIOException_ReturnsInternalServerError()
+        {
+            //ARRANGE
+            string filename = "myFile";
+            string extension = "txt";
+            string excpMsg = "IO Exception message";
+            fileController.Request = new System.Net.Http.HttpRequestMessage();
+            mockFileManager.Setup(x => x.Delete(It.IsAny<string>())).Throws(new IOException(excpMsg));
+            //fileController.Request.RequestUri = new Uri("http://localhost/FileTransfer/myFile/txt/CaaaaRaaaaC");
+
+
+            //ACT
+            var result = fileController.Delete(filename, extension);
+
+            //ASSERT
+            Assert.AreEqual(System.Net.HttpStatusCode.InternalServerError, result.StatusCode);
+            Assert.IsTrue(result.Content.ReadAsStringAsync().Result.Contains(excpMsg));
+        }
+
+        [TestMethod]
+        public void Delete_Exception_ReturnsInternalServerError()
+        {
+            //ARRANGE
+            string filename = "myFile";
+            string extension = "txt";
+            string excpMsg = "General Exception message";
+            fileController.Request = new System.Net.Http.HttpRequestMessage();
+            mockFileManager.Setup(x => x.Delete(It.IsAny<string>())).Throws(new Exception(excpMsg));
+            //fileController.Request.RequestUri = new Uri("http://localhost/FileTransfer/myFile/txt/CaaaaRaaaaC");
+
+
+            //ACT
+            var result = fileController.Delete(filename, extension);
+
+            //ASSERT
+            Assert.AreEqual(System.Net.HttpStatusCode.InternalServerError, result.StatusCode);
+            Assert.IsTrue(result.Content.ReadAsStringAsync().Result.Contains(excpMsg));
         }
     }
 }
