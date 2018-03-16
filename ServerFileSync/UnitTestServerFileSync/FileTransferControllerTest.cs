@@ -27,25 +27,22 @@ namespace UnitTestServerFileSync
             mockHubWrapper = new Mock<IFileNotifier>();
             var mockHubWrapperObject = mockHubWrapper.Object;
 
-            fileController = new FileTransferController(mockFileManagerOject, mockHubWrapperObject, "c:\\GSI");// (mockFileManager.Object, mockHubWrapper.Object);
-
-   
+            fileController = new FileTransferController(mockFileManagerOject, mockHubWrapperObject, @"C:\SyncFolders\ServerFolder");
         }
 
         [TestMethod]
         public void Upload_NoFileName_ReturnsBadRequest()
         {
             //ARRANGE
-
             byte[] fileBytes = new byte[] { 1, 2, 3 };
             HttpContent fileContent = new ByteArrayContent(fileBytes);
-            var fileName = "MyFile.txt";
 
             fileController.Request = new System.Net.Http.HttpRequestMessage();
             fileController.Request.Content = new MultipartFormDataContent()
                                                         {
+                                                            //Intentionally missing FileName
                                                             //{ new StringContent(fileName),fileName},
-                                                            { fileContent, "file", fileName }
+                                                            { fileContent, "file", "MyFile.txt" }
                                                         };
 
 
@@ -68,9 +65,9 @@ namespace UnitTestServerFileSync
             fileController.Request.Content = new MultipartFormDataContent()
                                                         {
                                                             { new StringContent(fileName),fileName},
+                                                            //Intentionally missing File
                                                             //{ fileContent, "file", fileName }
                                                         };
-
 
             //ACT
             var result = fileController.Upload().Result;
@@ -96,7 +93,6 @@ namespace UnitTestServerFileSync
                                                             { fileContent, "file", fileName }
                                                         };
 
-
             //ACT
             var result = fileController.Upload().Result;
 
@@ -110,17 +106,6 @@ namespace UnitTestServerFileSync
         public void Exists_EmptyParam_ReturnsBadRequest()
         {
             //ARRANGE
-            byte[] fileBytes = new byte[] { 1, 2, 3 };
-            HttpContent fileContent = new ByteArrayContent(fileBytes);
-            var fileName = "MyFile.txt";
-
-            fileController.Request = new System.Net.Http.HttpRequestMessage();
-            fileController.Request.Content = new MultipartFormDataContent()
-                                                        {
-                                                            { new StringContent(fileName),fileName},
-                                                            { fileContent, "file", fileName }
-                                                        };
-
 
             //ACT
             var result = fileController.Exists("");
@@ -137,17 +122,8 @@ namespace UnitTestServerFileSync
         {
             //ARRANGE
             mockFileManager.Setup(x => x.Exists(It.IsAny<string>())).Returns(existsMethodResult);
-            byte[] fileBytes = new byte[] { 1, 2, 3 };
-            HttpContent fileContent = new ByteArrayContent(fileBytes);
+
             var fileName = "MyFile.txt";
-
-            fileController.Request = new System.Net.Http.HttpRequestMessage();
-            fileController.Request.Content = new MultipartFormDataContent()
-                                                        {
-                                                            { new StringContent(fileName),fileName},
-                                                            { fileContent, "file", fileName }
-                                                        };
-
 
             //ACT
             var result = fileController.Exists(fileName);

@@ -26,6 +26,12 @@ namespace ServerFileSync.Controllers
             _hubWrapper = FileSyncHubWrapper.Instance;
         }
 
+        /// <summary>
+        /// Constructor for Unit Testing
+        /// </summary>
+        /// <param name="fileManager"></param>
+        /// <param name="hubWrapper"></param>
+        /// <param name="root"></param>
         public FileTransferController(IFileManager fileManager, IFileNotifier hubWrapper, string root)
         {
             _fileManager = fileManager;
@@ -71,10 +77,6 @@ namespace ServerFileSync.Controllers
             {
                 return new HttpResponseMessage(HttpStatusCode.InternalServerError);
             }
-
-
-
-            
         }
 
         private async Task<byte[]> GetFileBytesFromRequest(MultipartMemoryStreamProvider multiContents)
