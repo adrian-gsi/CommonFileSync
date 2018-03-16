@@ -177,8 +177,8 @@ namespace ClientWatcher
 
         private void OnWatcherDeleted(object source, FileSystemEventArgs e)
         {
-            if (!fileExists(e.Name, "").Result)
-                Task.WaitAll(sendFile(e.Name));
+            //if (!fileExists(e.Name, "").Result)
+            //    Task.WaitAll(sendFile(e.Name));
         }
 
         private string calculateMD5(string file)
