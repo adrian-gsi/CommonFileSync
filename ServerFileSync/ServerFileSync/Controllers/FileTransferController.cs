@@ -86,6 +86,7 @@ namespace ServerFileSync.Controllers
                 if (String.IsNullOrEmpty(filename) || extension == null)
                     return new HttpResponseMessage(HttpStatusCode.BadRequest);
                 _fileManager.Delete(filename + "." + extension);
+                _hubWrapper.NotifyDeleteFile(fileName);
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }
             catch (IOException excp)

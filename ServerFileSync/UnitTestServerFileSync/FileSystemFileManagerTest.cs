@@ -44,7 +44,7 @@ namespace UnitTestServerFileSync
             if (Directory.Exists(folderPath))
                  Directory.Delete(folderPath);
             fileManager = new FileSystemFileManager(folderPath);
-            //Thread.Sleep(100);
+            Thread.Sleep(50);
             Assert.IsTrue(Directory.Exists(folderPath));
         }
 
