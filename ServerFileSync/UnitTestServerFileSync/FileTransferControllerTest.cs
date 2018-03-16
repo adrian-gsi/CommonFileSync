@@ -214,6 +214,23 @@ namespace UnitTestServerFileSync
         }
 
         [TestMethod]
+        public void Delete_ParamsOK_NotifiesDeletion()
+        {
+            //ARRANGE
+            string filename = "myFile";
+            string extension = "txt";
+            fileController.Request = new System.Net.Http.HttpRequestMessage();
+            //fileController.Request.RequestUri = new Uri("http://localhost/FileTransfer/myFile/txt/CaaaaRaaaaC");
+
+
+            //ACT
+            var result = fileController.Delete(filename, extension);
+
+            //ASSERT
+            mockHubWrapper.Verify(x => x.NotifyDeleteFile(filename + "." + extension), Times.Once);
+        }
+
+        [TestMethod]
         public void Delete_OnIOException_ReturnsInternalServerError()
         {
             //ARRANGE
