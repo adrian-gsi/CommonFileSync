@@ -32,11 +32,10 @@ namespace ClientWatcher
         private string _webApiURLtoLoad = ConfigurationManager.AppSettings["WepApiURLtoLoad"].ToString();
         private string _wepApiURLtoDownload = ConfigurationManager.AppSettings["WepApiURLtoDownload"].ToString();
         private string _wepApiURLExistsFile = ConfigurationManager.AppSettings["WepApiURLExistsFile"].ToString();
+        private string _singalRHost = ConfigurationManager.AppSettings["SignalRHost"].ToString();
         FileSystemWatcher _watcher;
 
         public System.Threading.Thread Thread { get; set; }
-        //public string Host = "http://localhost:53349/";http://localhost:52051/
-        public string Host = "http://localhost:52051/";
         public IHubProxy Proxy { get; set; }
         public HubConnection Connection { get; set; }
         public bool Active { get; set; }
@@ -46,7 +45,7 @@ namespace ClientWatcher
             Active = true;
             Thread = new System.Threading.Thread(() =>
             {
-                Connection = new HubConnection(Host);
+                Connection = new HubConnection(_singalRHost);
                 Connection.Error += Connection_Error;
                 Connection.StateChanged += Connection_StateChanged;
                 Proxy = Connection.CreateHubProxy("FileSyncHub");
@@ -138,7 +137,7 @@ namespace ClientWatcher
             }
         }
 
-        private async Task<bool> fileExists(string fileName, string CRC)
+        private async Task<bool> fileExistsOnServer(string fileName, string CRC)
         {
             bool final;
             using (var client = new HttpClient())
@@ -172,7 +171,7 @@ namespace ClientWatcher
 
         private void OnWatcherChanged(object source, FileSystemEventArgs e)
         {
-            if (!fileExists(e.Name, "").Result)
+            if (!fileExistsOnServer(e.Name, "").Result)
                 Task.WaitAll(sendFile(e.Name));
         }
 
