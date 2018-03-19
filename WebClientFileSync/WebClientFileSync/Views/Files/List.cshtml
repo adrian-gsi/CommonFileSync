@@ -40,9 +40,14 @@
            $.connection.hub.url = 'http://localhost/ServerFileSync/signalr';
            var files = $.connection.fileSyncHub;
            // Create a function that the hub can call back to display messages.
-           files.client.newFileNotification = function (filename,CRC) {
+           files.client.deleteFileNotification = function (filename) {
                // Add the message to the page.
-               $('#filesTable').append('<tr><td>' + htmlEncode(filename) + '</td></tr>');
+               $('#filesTable').remove('#' + filename);
+           };
+
+           files.client.newFileNotification = function (filename, CRC) {
+               // Add the message to the page.
+               $('#filesTable').append('<tr id=' + filename + '><td>' + htmlEncode(filename) + '</td></tr>');
            };
            // Get the user name and store it to prepend to messages.
            //$('#displayname').val(prompt('Enter your name:', ''));
@@ -50,7 +55,7 @@
            //$('#message').focus();
            // Start the connection.
            $.connection.hub.start().done(function () {
-               //alert('Hub started!');
+               alert('Hub started!');
                //$('#sendmessage').click(function () {
                //    // Call the Send method on the hub.
                //    files.server.send($('#displayname').val(), $('#message').val());
