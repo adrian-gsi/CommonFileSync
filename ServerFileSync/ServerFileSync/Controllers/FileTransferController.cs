@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Web.Http;
 
@@ -22,7 +23,7 @@ namespace ServerFileSync.Controllers
         public FileTransferController()
         {
             _root = ConfigurationManager.AppSettings["SyncFolder"].ToString();
-            _fileManager =  new FileSystemFileManager(_root);
+            _fileManager = new FileSystemFileManager(_root);
             _hubWrapper = FileSyncHubWrapper.Instance;
         }
 
@@ -37,6 +38,27 @@ namespace ServerFileSync.Controllers
             _fileManager = fileManager;
             _hubWrapper = hubWrapper;
             _root = root;
+        }
+
+        [HttpPost]
+        public HttpResponseMessage Override(bool doIt)
+        {
+            var fileName = Request.Content.ReadAsStringAsync().Result;
+
+            try
+            {
+                if (doIt)
+                    _fileManager.Move(getTempFileName(fileName), fileName);
+                else
+                    _fileManager.Delete(getTempFileName(fileName));
+
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            catch (Exception)
+            {
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            }
+
         }
 
         [HttpPost]
@@ -57,17 +79,26 @@ namespace ServerFileSync.Controllers
 
                 byte[] fileBytes = await GetFileBytesFromRequest(multiContents);
 
-                _fileManager.Save(fileName, fileBytes);
+                if (_fileManager.Exists(fileName))
+                {
+                    _fileManager.Save(getTempFileName(fileName), fileBytes);
+                    return new HttpResponseMessage(HttpStatusCode.Ambiguous);
+                }
+                else
+                {
+                    _fileManager.Save(fileName, fileBytes);
+                    //Calculate CRC *************************************************************************** TO DO
+                    string CRC = getHash(fileName);
 
-                //Calculate CRC *************************************************************************** TO DO
-                string CRC = "";
+                    //Notify New File            
+                    //hub.NotifyNewFile(provider.GetOriginalFileName, CRC);
+                    _hubWrapper.NotifyNewFile(fileName, CRC);
 
-                //Notify New File            
-                //hub.NotifyNewFile(provider.GetOriginalFileName, CRC);
-                _hubWrapper.NotifyNewFile(fileName, CRC);
+                    //return task;
+                    return new HttpResponseMessage(HttpStatusCode.OK);
+                }
 
-                //return task;
-                return new HttpResponseMessage(HttpStatusCode.OK);
+
             }
             catch (HttpResponseException)
             {
@@ -78,7 +109,32 @@ namespace ServerFileSync.Controllers
                 return new HttpResponseMessage(HttpStatusCode.InternalServerError);
             }
         }
-        
+
+        private string getHash(string fileName)
+        {
+            string CRC;
+            using (var md5 = MD5.Create())
+            {
+                using (var stream = _fileManager.GetStream(fileName))
+                {
+                    //CRC = md5.ComputeHash(stream).ToString();
+                    CRC = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+                }
+            }
+
+            return CRC;
+        }
+
+        private string getTempFileName(string fileName)
+        {
+            string tempPart = "_partial";
+            var dotIndex = fileName.LastIndexOf('.');
+            if (dotIndex >= 0)
+                return fileName.Insert(dotIndex, tempPart);
+            else
+                return fileName + tempPart;
+        }
+
         public HttpResponseMessage Delete(string filename, string extension)
         {
             try
@@ -91,11 +147,11 @@ namespace ServerFileSync.Controllers
             }
             catch (IOException excp)
             {
-                return new HttpResponseMessage(HttpStatusCode.InternalServerError) { Content = new StringContent("Problems while deleting file. " + excp.Message) };                
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError) { Content = new StringContent("Problems while deleting file. " + excp.Message) };
             }
             catch (Exception excp)
             {
-                return new HttpResponseMessage(HttpStatusCode.InternalServerError) { Content = new StringContent(excp.Message) };                
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError) { Content = new StringContent(excp.Message) };
             }
         }
 
@@ -146,7 +202,7 @@ namespace ServerFileSync.Controllers
             }
             else
             {
-                response.Content = new StringContent(_fileManager.Exists(fileName) ? "true" : "false");                
+                response.Content = new StringContent(_fileManager.Exists(fileName) ? "true" : "false");
                 return response;
             }
             //return File.Exists(_root + "\\" + fileName);

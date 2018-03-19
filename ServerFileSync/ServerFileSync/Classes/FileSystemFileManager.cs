@@ -40,5 +40,14 @@ namespace ServerFileSync
         {
             File.WriteAllBytes(_filePath + "\\" + fileName, file);
         }
+
+        public void Move(string sourceName, string destinyName)
+        {
+            if (this.Exists(sourceName))
+            {
+                this.Save(destinyName, File.ReadAllBytes(_filePath + "\\" + sourceName));
+                this.Delete(sourceName);
+            }
+        }
     }
 }

@@ -16,5 +16,7 @@ namespace ServerFileSync.Interfaces
         bool Exists(string uri);
 
         void Delete(string uri);
+
+        void Move(string sourceName, string destinyName);
     }
 }
