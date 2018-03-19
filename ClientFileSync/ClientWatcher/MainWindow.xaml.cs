@@ -52,7 +52,8 @@ namespace ClientWatcher
                 Connection.StateChanged += Connection_StateChanged;
                 Proxy = Connection.CreateHubProxy("FileSyncHub");
 
-                Proxy.On<string, string>("NewFileNotification", (fileName, CRC) => OnNewFileNotified(fileName, CRC));
+                Proxy.On<string, string>("NewFileNotification", (fileName, CRC) => OnNewFileNotified(fileName, CRC));//
+                Proxy.On<string>("DeleteFileNotification", (fileName) => OnDeleteFileNotified(fileName));
 
                 Connection.Start();
 
@@ -63,6 +64,13 @@ namespace ClientWatcher
             })
             { IsBackground = true };
             Thread.Start();
+        }
+
+        private void OnDeleteFileNotified(string fileName)
+        {
+            var fullPath = _syncFolder + "\\" + fileName;
+            if (File.Exists(fullPath))
+                File.Delete(fullPath);
         }
 
         private void OnNewFileNotified(string fileName, string CRC)
