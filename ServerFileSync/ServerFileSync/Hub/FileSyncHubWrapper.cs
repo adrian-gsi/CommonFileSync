@@ -44,7 +44,8 @@ namespace ServerFileSync
             
         }
 
-        public void NotifyDeleteFile(object fileName)
+        // Send a Delete File Signal
+        public void NotifyDeleteFile(string fileName)
         {
             _context.Clients.All.DeleteFileNotification(fileName);
         }
