@@ -3,13 +3,30 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ClientWatcher"
+        xmlns:local="clr-namespace:ClientWatcher.Models"
+        xmlns:local1="clr-namespace:ClientWatcher"
         mc:Ignorable="d"
         Title="File Syncronizer" Height="350" Width="525" 
         Loaded="ActionWindowLoaded"
+        DataContext="{StaticResource FileWatcherViewModel}"
         >
     <Grid>
-        <Button x:Name="btnSendTest" Height="40" Width="60" Click="btnSendTest_Click" Visibility="Hidden">Send File</Button>
-        <Label x:Name="infoLabel" Margin="10,10,0,0" HorizontalAlignment="Left" Width="284" Height="28" VerticalAlignment="Top" />
+        <Button x:Name="btnSendTest" Width="60"  Visibility="Visible" Click="btnSendTest_Click" Margin="443,6,14,286">Test</Button>
+        <Label x:Name="infoLabel" Margin="10,10,0,0" HorizontalAlignment="Left" Width="284" Height="28" VerticalAlignment="Top" Content="{Binding Mode=OneWay, Path=Model.SignalRStatus}" />
+        <ListBox Name="lbEvents" HorizontalAlignment="Left" Height="145" Margin="10,43,0,0" VerticalAlignment="Top" Width="497" ItemsSource="{Binding Mode=OneWay, Path=Model.FileEvents}">
+            <!--DisplayMemberPath="ConcatenatedInfo"-->
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding ConcatenatedInfo}" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <ListView Name="lvEvents" HorizontalAlignment="Left" Height="100" Margin="10,193,0,0" VerticalAlignment="Top" Width="497" ItemsSource="{Binding Path=Model.FileEvents, Mode=OneWay, IsAsync=False}">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Events" DisplayMemberBinding="{Binding Path=ConcatenatedInfo, Mode=OneWay, IsAsync=False}"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
     </Grid>
 </Window>
